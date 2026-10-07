@@ -1,0 +1,8 @@
+Colocar aqui los insumos externos (no versionados):
+
+- estimaciones-y-proyecciones-2002-2035-comunas(Est. y Proy. de Pob.csv   (INE)
+- Poblacion Escolar {AAAA}.xlsx            (MINEDUC; opcional por año)
+- denominador_gestantes_{AAAA}.csv         (estimacion de gestantes; opcional)
+
+Los datos crudos RNI/SRP/NACIMIENTO se leen desde las rutas de las variables
+de entorno (RNI_PROGRAMATICAS_DIR, RNI_SRP_DIR, NACIMIENTO_DIR); no se copian aqui.

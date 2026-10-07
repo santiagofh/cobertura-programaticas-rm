@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.streamlit/secrets.toml
+
+# Datos crudos / confidenciales
+data/*
+!data/LEEME.txt
+
+# Outputs pesados (se regeneran con el pipeline)
+output/*
+!output/coberturas_vacunas_*_V7_*.csv
+!output/coberturas_vacunas_*_V7_*.xlsx
+
+# Backups / temporales
+backup/
+na/
+*.rar
