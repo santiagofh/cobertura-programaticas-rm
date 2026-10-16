@@ -19,6 +19,8 @@ data/*
 output/*
 !output/coberturas_vacunas_*_V7_*.csv
 !output/coberturas_vacunas_*_V7_*.xlsx
+# Excel que descarga el dashboard (debe viajar al repo)
+!output/coberturas_vacunas_*_MINSAL.xlsx
 
 # Backups / temporales
 backup/
