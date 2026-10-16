@@ -82,7 +82,7 @@ Ejecutado `python programas_2025.py --pasos 23`:
   con la etiqueta del corte y filtros/Servicio de Salud/descarga Excel igual
   que siempre. Se mantienen ocultas las 8 vacuna-dosis "Eliminar del cálculo".
 - `python verificar_minsal_imprimible.py` → PASS: el imprimible
-  `coberturas_vacunas_2025_MINSAL_imprimible.xlsx` es copia fiel del corte
+  `coberturas_vacunas_2025_MINSAL.xlsx` es copia fiel del corte
   (3 hojas × 53 filas × 23 vacunas, 0 diferencias; cuadre nacional 23/23).
 
 ### 3.3 Comparación corte vs cálculo local
@@ -160,8 +160,9 @@ comunal acumulada (SAE) contra MINSAL baja a menos de la mitad
 - `output/comparacion_programaticas_2025_vs_minsal.xlsx` — comparación.
 - `output/coberturas_vacunas_2025_PROPIO_SD_imprimible.xlsx` — matriz
   imprimible del cálculo propio (24 vacuna-dosis).
-- `output/coberturas_vacunas_2025_MINSAL_imprimible.xlsx` — matriz imprimible
-  del corte MINSAL (15 vacuna-dosis visibles; oculta las 8 "Eliminar del cálculo").
+- `output/coberturas_vacunas_2025_MINSAL.xlsx` — matriz imprimible
+  del corte MINSAL (15 vacuna-dosis visibles; oculta las 8 "Eliminar del cálculo";
+  es el Excel que descarga el dashboard).
 
 ### Modificados (Programáticas)
 

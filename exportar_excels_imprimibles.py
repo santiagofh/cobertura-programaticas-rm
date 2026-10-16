@@ -3,9 +3,9 @@
 Genera planillas con formato de impresión (estilo proyecto Influenza):
 
   - output/coberturas_vacunas_{T}_PROPIO_{base}_imprimible.xlsx  (cálculo local)
-  - output/coberturas_vacunas_{T}_MINSAL_imprimible.xlsx         (corte MINSAL,
+  - output/coberturas_vacunas_{T}_MINSAL.xlsx                    (corte MINSAL,
     solo las 15 vacuna-dosis visibles del dashboard; las 8 "Eliminar del cálculo"
-    quedan ocultas)
+    quedan ocultas; es el Excel que descarga el dashboard)
 
 Con `--base Final` genera además:
   - output/coberturas_vacunas_{T}_FINAL_imprimible.xlsx  (informe final imprimible)
@@ -447,7 +447,7 @@ def exportar(anio: int = 2025, base: str = "SD",
     # Neumo conj. 1ª/2ª).
     minsal = minsal[~minsal["VACUNA_DASHBOARD"].isin(VACUNAS_OCULTAS_DASHBOARD)].copy()
     generados.append(_escribir_archivo(
-        salida_dir / f"coberturas_vacunas_{T}_MINSAL_imprimible.xlsx",
+        salida_dir / f"coberturas_vacunas_{T}_MINSAL.xlsx",
         *_preparar_pivots(minsal),
         anio=anio, subtitulo="CORTE MINSAL",
     ))

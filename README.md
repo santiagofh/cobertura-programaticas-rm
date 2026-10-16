@@ -6,7 +6,7 @@ parametrizado por año. No modifica las carpetas originales
 
 ## Estructura
 
-- `app.py`: dashboard (por ahora **solo 2025**).
+- `app.py`: dashboard Streamlit (selector de año 2025 / 2024).
 - `src/config_programaticas.py`: configuración por año (cohortes derivadas de
   `T`, años de filtro NAC, modo de denominadores, fallbacks, textos).
 - `src/dashboard_comun.py`: dashboard parametrizado por año.
@@ -41,20 +41,20 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Por ahora el dashboard muestra **solo 2025** (selector de año fijo). Los CSV
-semilla `output/coberturas_vacunas_2025_V7_SD/CD/MIXTA/MINSAL/FINAL.csv` ya
-están incluidos.
+El dashboard tiene selector de año **2025 / 2024** y muestra los resultados
+oficiales de cada año, sin recalcular:
 
-El dashboard muestra el **Cálculo Final** (mezcla aprobada Usuario/MINSAL por
-vacuna) y tiene dos pestañas:
+- **2025**: corte MINSAL (`output/coberturas_vacunas_2025_V7_MINSAL.csv`).
+- **2024**: Informe Ejecutivo 2024 (`output/coberturas_vacunas_2024_V7_INFORME.csv`,
+  generado con `python convertir_informe_2024.py`).
 
-- **Coberturas**: vista de siempre (filtros por nivel, población, vacuna,
-  dosis, servicio de salud y comuna), con cada vacuna-dosis rotulada según su
-  origen: `*` MINSAL (corte oficial, sin recalcular) y `**` Usuario (cálculo
-  propio, base Mixta), más leyenda al pie.
-- **Comparativa vs MINSAL**: resumen por vacuna y detalle por comuna del
-  cálculo local contra el corte oficial, con selector de base local
-  (SD / CD / Mixto) y descarga a Excel.
+Debajo del selector de año hay un botón **Descargar Excel**: en 2025 baja
+`output/coberturas_vacunas_2025_MINSAL.xlsx` (matriz del corte, 15 vacuna-dosis
+visibles) y en 2024 el Informe Ejecutivo en Excel.
+
+La vista Coberturas mantiene filtros por nivel, población, vacuna, dosis,
+servicio de salud y comuna, y descarga de la tabla filtrada. Se mantienen
+ocultas las 8 vacuna-dosis "Eliminar del cálculo".
 
 Criterio del Informe Final (`data/prioridad_final_2025.csv`):
 
@@ -69,6 +69,7 @@ Requiere haber generado los CSV semilla:
 
 ```bash
 python convertir_minsal_programaticas.py            # output/..._V7_MINSAL.csv
+python convertir_informe_2024.py                    # output/..._2024_V7_INFORME.csv
 python seleccionar_base_minsal.py                   # output/..._V7_MIXTA.csv
 python seleccionar_base_final.py                    # output/..._V7_FINAL.csv
 python comparar_minsal_programaticas.py             # Excel de comparación (base CD)
@@ -91,8 +92,8 @@ Genera en `output/` planillas listas para imprimir (3 hojas cada una:
 TOTAL REGIÓN METROPOLITANA; apaisado, ajustado a 1 página de ancho):
 
 - `coberturas_vacunas_2025_PROPIO_SD_imprimible.xlsx` (24 vacuna-dosis).
-- `coberturas_vacunas_2025_MINSAL_imprimible.xlsx` (23 vacuna-dosis publicadas
-  por el corte).
+- `coberturas_vacunas_2025_MINSAL.xlsx` (15 vacuna-dosis visibles; oculta las 8
+  "Eliminar del cálculo"; es el Excel que descarga el dashboard).
 
 Con `--base Final` genera además:
 

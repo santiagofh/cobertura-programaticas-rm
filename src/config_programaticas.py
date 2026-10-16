@@ -184,6 +184,8 @@ class ConfigAnio:
     oficial_disponible: bool = False
     oficial_etiqueta: str = ""
     oficial_archivo: str = ""
+    # Dashboard: Excel descargable desde la barra lateral (bajo el selector de año)
+    descarga_xlsx: str = ""
 
     @property
     def nac_filter_years(self) -> list:
@@ -213,6 +215,10 @@ CONFIGS = {
         oficial_disponible=True,
         oficial_etiqueta="Informe Ejecutivo 2024 (corte 15-06-2026)",
         oficial_archivo="coberturas_vacunas_2024_V7_INFORME.csv",
+        descarga_xlsx=str(
+            BASE_DIR / "2024 Cerrado"
+            / "2026-06-17_coberturas_vacunas_Programaticas_2024_V7_Informe Ejecutivo 2024.xlsx"
+        ),
         **_fallbacks(2024, legacy_v3=True),
     ),
     2025: ConfigAnio(
@@ -229,6 +235,7 @@ CONFIGS = {
         oficial_disponible=True,
         oficial_etiqueta="Corte MINSAL 2026-10-09",
         oficial_archivo="coberturas_vacunas_2025_V7_MINSAL.csv",
+        descarga_xlsx=str(OUTPUT_DIR / "coberturas_vacunas_2025_MINSAL.xlsx"),
         **_fallbacks(2025, legacy_v3=False),
     ),
     2026: ConfigAnio(

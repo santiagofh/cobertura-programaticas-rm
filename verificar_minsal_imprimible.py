@@ -1,11 +1,12 @@
 """Verifica que el Excel imprimible MINSAL sea copia fiel del corte oficial.
 
 Compara celda a celda las 3 hojas de
-`output/coberturas_vacunas_{T}_MINSAL_imprimible.xlsx` (Cobertura %, Vacunados,
+`output/coberturas_vacunas_{T}_MINSAL.xlsx` (Cobertura %, Vacunados,
 Población objetivo) contra los CSV oficiales del corte MINSAL, reconstruyendo
 la matriz con las mismas reglas del exportador (etiquetas cortas, 52 comunas
 ordenadas + fila TOTAL REGIÓN METROPOLITANA; solo las 15 vacuna-dosis visibles
-del dashboard, con las 8 "Eliminar del cálculo" ocultas).
+del dashboard, con las 8 "Eliminar del cálculo" ocultas). Si no existe el
+archivo nuevo usa `..._MINSAL_imprimible.xlsx` como respaldo.
 
 Además revisa:
   - El CSV semilla `coberturas_vacunas_{T}_V7_MINSAL.csv` contra el detalle
@@ -147,8 +148,14 @@ def main():
     ap.add_argument("--tolerancia", type=float, default=1e-6)
     args = ap.parse_args()
 
-    imprimible = args.imprimible or (
-        cfgmod.OUTPUT_DIR / f"coberturas_vacunas_{args.anio}_MINSAL_imprimible.xlsx")
+    if args.imprimible is not None:
+        imprimible = args.imprimible
+    else:
+        candidatos = [
+            cfgmod.OUTPUT_DIR / f"coberturas_vacunas_{args.anio}_MINSAL.xlsx",
+            cfgmod.OUTPUT_DIR / f"coberturas_vacunas_{args.anio}_MINSAL_imprimible.xlsx",
+        ]
+        imprimible = next((c for c in candidatos if c.exists()), candidatos[0])
     semilla = args.semilla or (
         cfgmod.OUTPUT_DIR / f"coberturas_vacunas_{args.anio}_V7_MINSAL.csv")
 

@@ -116,7 +116,10 @@ Comparativa). Mantiene ocultas las 8 vacuna-dosis "Eliminar del cálculo"
   `output/coberturas_vacunas_2024_V7_INFORME.csv` (ruta del Excel
   sobreescribible con `PROGRAMATICAS_INFORME_2024_XLSX`).
 - Configuración por año en `src/config_programaticas.py`
-  (`oficial_disponible`, `oficial_etiqueta`, `oficial_archivo`).
+  (`oficial_disponible`, `oficial_etiqueta`, `oficial_archivo`, `descarga_xlsx`).
+- Barra lateral: bajo el selector de año hay un botón **Descargar Excel**
+  (2025 → `output/coberturas_vacunas_2025_MINSAL.xlsx`; 2024 → Informe
+  Ejecutivo 2024 en `2024 Cerrado\`).
 - Verificación del imprimible MINSAL contra los CSV del corte (3 hojas,
   52 comunas + TOTAL, 15 vacuna-dosis visibles, cuadre nacional y semilla):
   `python verificar_minsal_imprimible.py` → PASS.
@@ -125,7 +128,7 @@ Comparativa). Mantiene ocultas las 8 vacuna-dosis "Eliminar del cálculo"
 - `python exportar_excels_imprimibles.py [--base SD/CD/Mixto/Final]` sigue
   generando los imprimibles en `output/`:
   - `coberturas_vacunas_2025_PROPIO_{base}_imprimible.xlsx`
-  - `coberturas_vacunas_2025_MINSAL_imprimible.xlsx`
+  - `coberturas_vacunas_2025_MINSAL.xlsx` (es el Excel que descarga el dashboard)
   3 hojas (Cobertura % con semáforo, Vacunados, Población objetivo), matriz
   52 comunas + TOTAL REGIÓN METROPOLITANA, apaisado ajustado a 1 página de
   ancho. El archivo PROPIO trae 24 vacuna-dosis; el MINSAL las 15 visibles

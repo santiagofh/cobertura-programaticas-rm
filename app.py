@@ -3,6 +3,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from src import config_programaticas as cfgmod
 from src.dashboard_comun import render_dashboard
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,6 +39,18 @@ with st.sidebar:
         format_func=lambda x: f"Año {x}",
         key="selector_anio",
     )
+    descarga = Path(cfgmod.get_config(anio).descarga_xlsx)
+    if descarga.exists():
+        st.download_button(
+            f"Descargar Excel ({anio})",
+            data=descarga.read_bytes(),
+            file_name=descarga.name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key=f"descarga_oficial_{anio}",
+            use_container_width=True,
+        )
+    else:
+        st.caption(f"Archivo no encontrado: {descarga.name}")
 
 try:
     render_dashboard(anio)
