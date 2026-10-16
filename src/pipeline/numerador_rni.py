@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from .. import config_programaticas as cfgmod
+from . import rni_io
 
 DOSIS_MAP = {
     "0.05 ml": "DOSIS_UNICA", "0.1 ml": "DOSIS_UNICA",
@@ -87,20 +88,16 @@ def run(anio: int):
     DIR_ARCHIVO_DETALLE.mkdir(parents=True, exist_ok=True)
 
     RUTA_BASE_RNI = cfgmod.requerido(cfgmod.RNI_PROGRAMATICAS_DIR, "RNI_PROGRAMATICAS_DIR")
-    RUTAS_ANIOS = {
-        T: RUTA_BASE_RNI / f"Programaticas_{T}.parquet",
-        T + 1: RUTA_BASE_RNI / f"Programaticas_{T+1}.parquet",
-        T + 2: RUTA_BASE_RNI / f"Programaticas_{T+2}.parquet",
-    }
+    RUTAS_ANIOS = {anio_parq: rni_io.resolver(anio_parq) for anio_parq in (T, T + 1, T + 2)}
 
-    RUTAS_FALTANTES = [ruta for ruta in RUTAS_ANIOS.values() if not ruta.exists()]
+    RUTAS_FALTANTES = [anio_parq for anio_parq, fuente in RUTAS_ANIOS.items() if fuente is None]
     if RUTAS_FALTANTES:
-        faltantes = "\n  - ".join(str(ruta) for ruta in RUTAS_FALTANTES)
+        faltantes = "\n  - ".join(f"Programaticas_{a}.parquet o .csv" for a in RUTAS_FALTANTES)
         if cfg.strict_parquet:
-            raise FileNotFoundError(f"Faltan archivos Parquet esperados:\n  - {faltantes}")
+            raise FileNotFoundError(f"Faltan archivos RNI esperados:\n  - {faltantes}")
         print("=" * 55)
         print(f"ADVERTENCIA (ejecucion provisoria {T}):")
-        print(f"  Faltan archivos Parquet esperados:\n  - {faltantes}")
+        print(f"  Faltan archivos RNI esperados:\n  - {faltantes}")
         print("  Se continua SOLO con los anos disponibles.")
         print("=" * 55)
 
@@ -111,11 +108,11 @@ def run(anio: int):
     print("=" * 55)
     print(f"  CARGANDO PARQUET {T}-{T+2} [V7]")
     print("=" * 55)
-    for anio_parq, ruta in RUTAS_ANIOS.items():
-        if not ruta.exists():
+    for anio_parq, fuente in RUTAS_ANIOS.items():
+        if fuente is None:
             continue
-        print(f"  [{anio_parq}] Cargando...")
-        df_anio = pd.read_parquet(ruta, columns=COLUMNAS)
+        print(f"  [{anio_parq}] Cargando {fuente[0].name}...")
+        df_anio = rni_io.leer(anio_parq, COLUMNAS)
         for col in ["COD_COMUNA_RESID", "COD_COMUNA_OCURR"]:
             df_anio[col] = pd.to_numeric(df_anio[col], errors="coerce")
         df_anio = df_anio[

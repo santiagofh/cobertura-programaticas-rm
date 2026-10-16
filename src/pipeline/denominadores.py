@@ -5,6 +5,7 @@ Port fiel de 2_denominadores_2025_V7.py (modo NAC crudos) + el modo
 config.nac_raw (False = reciclar).
 """
 
+import unicodedata
 from datetime import date
 from glob import glob
 from pathlib import Path
@@ -12,6 +13,32 @@ from pathlib import Path
 import pandas as pd
 
 from .. import config_programaticas as cfgmod
+
+
+def _normalizar_texto(valor) -> str:
+    """Minúsculas, sin acentos y con espacios colapsados (admite NBSP)."""
+    texto = unicodedata.normalize("NFKD", str(valor)).encode("ascii", "ignore").decode()
+    return " ".join(texto.replace("\xa0", " ").split()).lower()
+
+
+def _mapa_comunas_norm() -> dict:
+    return {_normalizar_texto(k): v for k, v in cfgmod.COMUNA_MAP.items()}
+
+
+def _buscar_fila_header(df: pd.DataFrame, objetivo: str = "comuna") -> int:
+    for i in range(min(15, len(df))):
+        if _normalizar_texto(df.iloc[i, 0]) == objetivo:
+            return i
+    raise ValueError(f"No se encontró fila de encabezado con '{objetivo}' en el Excel.")
+
+
+def _leer_matricula_mineduc(ruta: Path, hoja: str) -> pd.DataFrame:
+    """Lee el layout MINEDUC RM (hoja con 'Comuna' + 1°/4°/5°/8° básico)."""
+    df_esc = pd.read_excel(ruta, sheet_name=hoja, header=None)
+    hdr = _buscar_fila_header(df_esc)
+    data = df_esc.iloc[hdr + 1:, [0, 1, 2, 3, 4]].copy()
+    data.columns = ["COMUNA", "dTpa_1basico", "VPH_4basico", "VPH_5basico", "dTpa_8basico"]
+    return data.dropna(subset=["COMUNA"])
 
 
 def latest_dated_file(dir_path: Path, base_name: str) -> Path:
@@ -73,6 +100,7 @@ def run(anio: int):
     RUTA_BASE_NAC = cfgmod.requerido(cfgmod.NACIMIENTO_DIR, "NACIMIENTO_DIR")
     RUTA_INE = cfgmod.requerido(cfgmod.ESTIMACIONES_CSV, "ESTIMACIONES_CSV")
     RUTA_POB_ESC = cfgmod.DATA_DIR / cfg.pob_esc_nombre
+    RUTA_POB_PROG = cfgmod.DATA_DIR / cfg.pob_prog_nombre if cfg.pob_prog_nombre else None
 
     RUTAS_NAC = {y: RUTA_BASE_NAC / str(y) / f"NAC{y}.csv" for y in range(T - 3, T + 1)}
 
@@ -158,14 +186,18 @@ def run(anio: int):
     print("=" * 65)
     mat_csv = None
     if RUTA_POB_ESC.exists():
-        df_esc = pd.read_excel(RUTA_POB_ESC, header=None)
-        data = df_esc.iloc[6:58, [0, 1, 2, 3, 4]].copy()
-        data.columns = ["COMUNA", "dTpa_1basico", "VPH_4basico", "VPH_5basico", "dTpa_8basico"]
+        if cfg.pob_esc_hoja:
+            data = _leer_matricula_mineduc(RUTA_POB_ESC, cfg.pob_esc_hoja)
+        else:
+            df_esc = pd.read_excel(RUTA_POB_ESC, header=None)
+            data = df_esc.iloc[6:58, [0, 1, 2, 3, 4]].copy()
+            data.columns = ["COMUNA", "dTpa_1basico", "VPH_4basico", "VPH_5basico", "dTpa_8basico"]
         data = data.dropna(subset=["COMUNA"])
         data["COMUNA"] = data["COMUNA"].astype(str).str.strip()
         for col in ["dTpa_1basico", "VPH_4basico", "VPH_5basico", "dTpa_8basico"]:
             data[col] = pd.to_numeric(data[col], errors="coerce").fillna(0).astype(int)
-        data["COMUNA_N"] = data["COMUNA"].map(COMUNA_MAP)
+        mapa_norm = _mapa_comunas_norm()
+        data["COMUNA_N"] = data["COMUNA"].map(_normalizar_texto).map(mapa_norm)
         unmapped = data[data["COMUNA_N"].isna()]["COMUNA"].unique()
         if len(unmapped):
             print(f"  AVISO Comunas sin mapear: {unmapped}")
@@ -185,6 +217,46 @@ def run(anio: int):
         print(f"  AVISO: NO EXISTE {RUTA_POB_ESC.name} — matrícula escolar OMITIDA (pendiente MINEDUC {T}).")
         print("  Vacunas escolares (dTpa 1°/8°, VPH 4°/5°) quedan sin denominador.")
 
+    # ═══ D) DENOMINADOR GESTANTES ═══
+    print("\n" + "=" * 65)
+    print(f"D) DENOMINADOR GESTANTES (Población programáticas {T})")
+    print("=" * 65)
+    gest_csv = None
+    if RUTA_POB_PROG is not None and RUTA_POB_PROG.exists():
+        df_prog = pd.read_excel(RUTA_POB_PROG, sheet_name=cfg.pob_prog_hoja, header=None)
+        hdr = _buscar_fila_header(df_prog)
+        col_gest = None
+        for j, valor in enumerate(df_prog.iloc[hdr]):
+            if "barazadas" in _normalizar_texto(valor):
+                col_gest = j
+                break
+        if col_gest is None:
+            raise ValueError(f"No se encontró columna de gestantes en {RUTA_POB_PROG.name}.")
+        gestantes = df_prog.iloc[hdr + 1:, [0, col_gest]].copy()
+        gestantes.columns = ["COMUNA", "GESTANTES_ESTIMADAS"]
+        gestantes = gestantes.dropna(subset=["COMUNA"])
+        gestantes["COMUNA"] = gestantes["COMUNA"].astype(str).str.strip()
+        gestantes["GESTANTES_ESTIMADAS"] = (
+            pd.to_numeric(gestantes["GESTANTES_ESTIMADAS"], errors="coerce").fillna(0).astype(int)
+        )
+        mapa_norm = _mapa_comunas_norm()
+        gestantes["COMUNA_N"] = gestantes["COMUNA"].map(_normalizar_texto).map(mapa_norm)
+        unmapped = gestantes[gestantes["COMUNA_N"].isna()]["COMUNA"].unique()
+        if len(unmapped):
+            print(f"  AVISO Comunas sin mapear: {unmapped}")
+        gestantes = gestantes.dropna(subset=["COMUNA_N"])
+        gestantes["COMUNA_N"] = gestantes["COMUNA_N"].astype(int)
+        gestantes = (gestantes[["COMUNA_N", "COMUNA", "GESTANTES_ESTIMADAS"]]
+                     .sort_values("COMUNA_N").reset_index(drop=True))
+        print(f"  Gestantes RM (28+ semanas): {gestantes['GESTANTES_ESTIMADAS'].sum():,}")
+        gest_csv = f"{RUN_DATE}_denominador_gestantes_{T}_V7.csv"
+        gestantes.to_csv(DIR_OUTPUT / gest_csv, index=False, encoding="utf-8-sig")
+        gestantes.to_excel(DIR_OUTPUT / f"{RUN_DATE}_denominador_gestantes_{T}_V7.xlsx", index=False)
+        print(f"  OK denominador_gestantes_{T}.csv guardado ({len(gestantes)} comunas)")
+    else:
+        nombre = RUTA_POB_PROG.name if RUTA_POB_PROG is not None else "sin configurar"
+        print(f"  AVISO: NO EXISTE {nombre} — dTpa gestantes queda sin denominador.")
+
     print("\n" + "=" * 65)
     print("OK TODOS LOS DENOMINADORES GUARDADOS EN: output/")
     print("=" * 65)
@@ -192,4 +264,5 @@ def run(anio: int):
         f"{RUN_DATE}_denominador_nacimientos_{T}_V7.csv",
         f"{RUN_DATE}_denominador_neumococica_65_{T}_V7.csv",
         mat_csv,
+        gest_csv,
     ]

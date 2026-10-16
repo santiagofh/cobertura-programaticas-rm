@@ -13,6 +13,7 @@ from datetime import date
 import pandas as pd
 
 from .. import config_programaticas as cfgmod
+from . import rni_io
 
 COL_SRP = [
     "RUN", "PASAPORTE", "OTRO", "ID_INMUNIZACION",
@@ -109,11 +110,10 @@ def run(anio: int):
     excluidos_por_criterio = Counter()
     lista = []
     for anio_srp in [2020, 2021, 2022, 2023, 2024, 2025, 2026]:
-        ruta = R_OLD / f"Programaticas_{anio_srp}.parquet"
-        if not ruta.exists():
-            raise FileNotFoundError(f"No existe: {ruta}")
-
-        df_a = pd.read_parquet(ruta, columns=COL_SRP)
+        df_a = rni_io.leer(anio_srp, COL_SRP)
+        if df_a is None:
+            print(f"[{anio_srp}] ADVERTENCIA: sin base RNI (ni CSV ni parquet) — se omite este año")
+            continue
         for col in ["RUN", "PASAPORTE", "OTRO", "ID_INMUNIZACION", "NOMBRE_VACUNA",
                     "COMUNA_RESIDENCIA", "VACUNA_ADMINISTRADA", "REGISTRO_ELIMINADO",
                     "CRITERIO_ELEGIBILIDAD"]:

@@ -5,9 +5,10 @@ Cada año conserva su metodologia original:
           (data/nacimientos no disponible originalmente).
   - 2025/2026: denominadores calculados desde NAC crudos (SRCeI).
 
-Rutas externas configurables por variables de entorno:
-  RNI_PROGRAMATICAS_DIR, RNI_SRP_DIR, NACIMIENTO_DIR,
-  ESTIMACIONES_CSV, PROGRAMATICAS_OUTPUT_DIR, PROGRAMATICAS_DATA_DIR.
+Rutas externas configurables por variables de entorno (con valores por defecto
+locales): RNI_PROGRAMATICAS_DIR (por defecto DATA 2026-10-09), 
+RNI_PROGRAMATICAS_FALLBACK_DIR, RNI_SRP_DIR, NACIMIENTO_DIR,
+ESTIMACIONES_CSV, PROGRAMATICAS_OUTPUT_DIR, PROGRAMATICAS_DATA_DIR.
 """
 
 import os
@@ -18,10 +19,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("PROGRAMATICAS_DATA_DIR", BASE_DIR / "data"))
 OUTPUT_DIR = Path(os.environ.get("PROGRAMATICAS_OUTPUT_DIR", BASE_DIR / "output"))
 
-# Rutas externas: se definen por variable de entorno (no se versionan rutas locales).
-RNI_PROGRAMATICAS_DIR = Path(os.environ.get("RNI_PROGRAMATICAS_DIR", ""))
-RNI_SRP_DIR = Path(os.environ.get("RNI_SRP_DIR", ""))
-NACIMIENTO_DIR = Path(os.environ.get("NACIMIENTO_DIR", ""))
+# Fuente RNI por defecto: export en la carpeta hermana DATA 2026-10-09
+# (Programaticas_{anio}.csv o .parquet). Se puede sobreescribir por entorno.
+RNI_PROGRAMATICAS_DEFAULT = BASE_DIR.parent / "DATA 2026-10-09"
+RNI_PROGRAMATICAS_DIR = Path(
+    os.environ.get("RNI_PROGRAMATICAS_DIR", str(RNI_PROGRAMATICAS_DEFAULT))
+)
+# Respaldo solo para años ausentes en la fuente principal (parquets historicos).
+RNI_PROGRAMATICAS_FALLBACK_DIR = Path(
+    os.environ.get("RNI_PROGRAMATICAS_FALLBACK_DIR", r"D:\DATA\RNI\PROGRAMATICAS")
+)
+RNI_SRP_DIR = Path(os.environ.get("RNI_SRP_DIR", r"D:\DATA\RNI\SRP"))
+NACIMIENTO_DIR = Path(os.environ.get("NACIMIENTO_DIR", r"D:\DATA\NACIMIENTO"))
 ESTIMACIONES_CSV = Path(
     os.environ.get(
         "ESTIMACIONES_CSV",
@@ -161,6 +170,9 @@ class ConfigAnio:
     # Paso 2
     nac_raw: bool              # True: NAC crudos; False: reciclar denominadores previos (2024)
     pob_esc_nombre: str
+    pob_esc_hoja: str | None = None          # hoja del Excel MINEDUC (None = layout legacy header=None)
+    pob_prog_nombre: str | None = None       # Excel de poblaciones programáticas (gestantes)
+    pob_prog_hoja: str | None = None
     # Paso 3 (fallbacks)
     fallback_nac: list = field(default_factory=list)
     fallback_65: list = field(default_factory=list)
@@ -168,6 +180,10 @@ class ConfigAnio:
     fallback_gest: list = field(default_factory=list)
     # Dashboard
     alertas: dict = field(default_factory=dict)
+    # Dashboard espejo: fuente oficial publicada (sin recalcular)
+    oficial_disponible: bool = False
+    oficial_etiqueta: str = ""
+    oficial_archivo: str = ""
 
     @property
     def nac_filter_years(self) -> list:
@@ -189,23 +205,32 @@ CONFIGS = {
     2024: ConfigAnio(
         T=2024,
         page_title="Dashboard Programáticas 2024",
-        caption="Año 2024. Vista de coberturas regionales y comunales basada en los outputs consolidados del programa.",
+        caption=("Año 2024. Reflejo del Informe Ejecutivo 2024 (corte 15-06-2026) — "
+                 "resultados publicados, sin recalcular."),
         strict_parquet=True,
         nac_raw=False,
         pob_esc_nombre="Poblacion Escolar 2024.xlsx",
         alertas=ALERTAS_2024,
+        oficial_disponible=True,
+        oficial_etiqueta="Informe Ejecutivo 2024 (corte 15-06-2026)",
+        oficial_archivo="coberturas_vacunas_2024_V7_INFORME.csv",
         **_fallbacks(2024, legacy_v3=True),
     ),
     2025: ConfigAnio(
         T=2025,
         page_title="Dashboard Programáticas 2025",
-        caption=("Año 2025. Vista de coberturas regionales y comunales basada en los outputs "
-                 "consolidados del programa. Ejecución provisoria: pendiente parquet RNI 2027, "
-                 "matrícula MINEDUC 2025 y denominador de gestantes 2025."),
+        caption=("Año 2025. Reflejo del corte MINSAL 2026-10-09 — resultados "
+                 "publicados, sin recalcular."),
         strict_parquet=False,
         nac_raw=True,
-        pob_esc_nombre="Poblacion Escolar 2025.xlsx",
+        pob_esc_nombre="Población MINEDUC2025.xlsx",
+        pob_esc_hoja="2025RM",
+        pob_prog_nombre="Población programáticas2025.xlsx",
+        pob_prog_hoja="2025 RM",
         alertas=ALERTAS_2025,
+        oficial_disponible=True,
+        oficial_etiqueta="Corte MINSAL 2026-10-09",
+        oficial_archivo="coberturas_vacunas_2025_V7_MINSAL.csv",
         **_fallbacks(2025, legacy_v3=False),
     ),
     2026: ConfigAnio(

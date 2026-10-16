@@ -1,8 +1,8 @@
 """Dashboard comun de coberturas de vacunas programaticas, parametrizado por año.
 
-Port de streamlit_dashboard.py 2025 con:
-  - titulo, caption y 3 alertas por año (config.alertas)
-  - patrones de archivo coberturas_vacunas_{T}_V7_SD/CD
+Espejo de la fuente oficial publicada (sin recalcular):
+  - 2025: corte MINSAL 2026-10-09        -> coberturas_vacunas_2025_V7_MINSAL.csv
+  - 2024: Informe Ejecutivo 2024 (cierre) -> coberturas_vacunas_2024_V7_INFORME.csv
 """
 
 from io import BytesIO
@@ -41,6 +41,17 @@ VACUNA_META = {
     "VACUNA DTPA GESTANTES": {"vacuna": "dTpa gestantes", "dosis": "Dosis única", "grupo": "Gestantes", "estrategia": "Gestantes", "fuente": "Estimación gestantes", "alerta": "El denominador de gestantes depende de estimación específica del programa; conviene validar la lectura con el equipo técnico."},
 }
 DISPLAY_ORDER = list(VACUNA_META.keys())
+
+VACUNAS_OCULTAS_DASHBOARD = {
+    "VACUNA HEXAVALENTE 1RA DOSIS",
+    "VACUNA HEXAVALENTE 2DA DOSIS",
+    "VACUNA HEXAVALENTE REFUERZO",
+    "VACUNA MENINGOCOCICA RECOMBINANTE 1RA DOSIS",
+    "VACUNA MENINGOCOCICA RECOMBINANTE 2DA DOSIS",
+    "VACUNA MENINGOCOCICA RECOMBINANTE REFUERZO",
+    "VACUNA NEUMOCOCICA CONJUGADA 1RA DOSIS",
+    "VACUNA NEUMOCOCICA CONJUGADA 2DA DOSIS",
+}
 
 COMUNA_TO_SS = {
     "Alhué": "Servicio de Salud Metropolitano Occidente",
@@ -150,16 +161,18 @@ def add_ss_column(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def ruta_oficial(anio: int) -> Path:
+    cfg = cfgmod.get_config(anio)
+    if not cfg.oficial_disponible:
+        raise ValueError(f"El año {anio} no tiene fuente oficial configurada en el dashboard.")
+    return latest_dated_file_any(cfgmod.OUTPUT_DIR, cfg.oficial_archivo)
+
+
 @st.cache_data(show_spinner=False)
 def load_detail(anio: int) -> tuple[pd.DataFrame, Path]:
-    T = cfgmod.get_config(anio).T
-    path = latest_dated_file_any(
-        cfgmod.OUTPUT_DIR,
-        f"coberturas_vacunas_{T}_V7_SD.csv",
-        f"coberturas_vacunas_{T}_V7_CD.csv",
-        f"coberturas_vacunas_{T}.csv",
-    )
+    path = ruta_oficial(anio)
     df = pd.read_csv(path, encoding="utf-8-sig")
+    df = df[~df["VACUNA_DASHBOARD"].isin(VACUNAS_OCULTAS_DASHBOARD)].copy()
     df = enrich_metadata(df, anio)
     comuna_source = next((c for c in ["COMUNA_CALCULO", "COMUNA_RESIDENCIA", "COMUNA"] if c in df.columns), None)
     if comuna_source is None:
@@ -172,12 +185,12 @@ def load_detail(anio: int) -> tuple[pd.DataFrame, Path]:
 
 @st.cache_data(show_spinner=False)
 def load_regional(anio: int) -> tuple[pd.DataFrame, Path]:
-    """Resumen regional reconstruido desde el detalle (equivale a la hoja
-    Resumen_Regional del script 3, sin duplicar denominadores por vacuna)."""
-    T = cfgmod.get_config(anio).T
-    detail, _ = load_detail(anio)
+    """Resumen regional reconstruido desde el detalle oficial, sin duplicar
+    denominadores por vacuna (cuadra con la fila nacional publicada)."""
+    detail, path = load_detail(anio)
+    agg = {"VACUNAS_ADMINISTRADAS": ("VACUNAS_ADMINISTRADAS", "sum")}
     num = (detail.groupby(["VACUNA_DASHBOARD", "CLAVE_DENOMINADOR"], as_index=False)
-           .agg(VACUNAS_ADMINISTRADAS=("VACUNAS_ADMINISTRADAS", "sum")))
+           .agg(**agg))
     den = (detail.drop_duplicates(["CLAVE_DENOMINADOR", "COD_COMUNA_JOIN"])
            .groupby("CLAVE_DENOMINADOR", as_index=False)
            .agg(POBLACION_OBJETIVO=("POBLACION_OBJETIVO", "sum")))
@@ -186,15 +199,6 @@ def load_regional(anio: int) -> tuple[pd.DataFrame, Path]:
         reg["VACUNAS_ADMINISTRADAS"] / reg["POBLACION_OBJETIVO"].replace(0, pd.NA) * 100
     ).round(1).fillna(0)
     reg = enrich_metadata(reg, anio)
-    try:
-        path = latest_dated_file_any(
-            cfgmod.OUTPUT_DIR,
-            f"coberturas_vacunas_{T}_V7_SD.xlsx",
-            f"coberturas_vacunas_{T}_V7_CD.xlsx",
-            f"coberturas_vacunas_{T}.xlsx",
-        )
-    except FileNotFoundError:
-        path = Path(f"coberturas_vacunas_{T}_V7_SD.xlsx")
     return reg, path
 
 
@@ -220,28 +224,40 @@ def to_excel_bytes(df: pd.DataFrame, quality_df: pd.DataFrame | None = None) -> 
     return buffer.getvalue()
 
 
-def render_provisional_badge():
-    st.markdown('<div class="provisional-badge">Datos Provisorios</div>', unsafe_allow_html=True)
+def render_badge(texto: str):
+    st.markdown(f'<div class="provisional-badge">{texto}</div>', unsafe_allow_html=True)
 
 
 def render_dashboard(anio: int):
     cfg = cfgmod.get_config(anio)
+
+    st.title("Dashboard Coberturas Vacunas Programáticas")
+    render_badge(
+        f"Reflejo de la fuente oficial — {cfg.oficial_etiqueta} — "
+        "resultados publicados, sin recalcular"
+    )
+
     detail_df, detail_path = load_detail(anio)
-    regional_df, regional_path = load_regional(anio)
+    regional_df, _ = load_regional(anio)
     valid_detail_df = detail_df[detail_df["valid_denom"]].copy()
     invalid_detail_df = detail_df[~detail_df["valid_denom"]].copy()
 
-    st.title("Dashboard Coberturas Vacunas Programáticas")
-    render_provisional_badge()
     st.caption(cfg.caption)
+    render_coberturas(anio, cfg, detail_path,
+                      regional_df, valid_detail_df, invalid_detail_df)
 
+
+def render_coberturas(anio, cfg, detail_path,
+                      regional_df, valid_detail_df, invalid_detail_df):
     with st.sidebar:
         st.header("Filtros")
         st.caption(f"Año: {cfg.T}")
         level = st.selectbox("Nivel", ["Regional", "Comuna"], index=0)
         strategy_options = ["Todas"] + sorted(regional_df["estrategia"].dropna().unique().tolist())
         strategy_choice = st.selectbox("Población / grupo", strategy_options, index=0)
-        vaccine_options = ["Todas"] + list(dict.fromkeys(VACUNA_META[k]["vacuna"] for k in DISPLAY_ORDER))
+        presentes = {str(v) for v in regional_df["VACUNA_DASHBOARD"].dropna().unique()}
+        vaccine_options = ["Todas"] + list(dict.fromkeys(
+            VACUNA_META[k]["vacuna"] for k in DISPLAY_ORDER if k in presentes))
         vaccine_choice = st.selectbox("Vacuna", vaccine_options, index=0)
         if vaccine_choice == "Todas":
             dose_choice = st.selectbox("Dosis", ["Todas"] + sorted(regional_df["dosis"].dropna().unique().tolist()), index=0)
@@ -311,8 +327,8 @@ def render_dashboard(anio: int):
     st.dataframe(style_percent_table(display_df), use_container_width=True, hide_index=True)
 
     quality_summary = pd.DataFrame([{
-        "Archivo detalle": detail_path.name,
-        "Archivo regional": regional_path.name,
+        "Fuente": cfg.oficial_etiqueta,
+        "Archivo": detail_path.name,
         "Registros válidos": int(valid_detail_df.shape[0]),
         "Registros sin denominador": int(invalid_detail_df.shape[0]),
         "Comunas válidas RM": int(valid_detail_df["comuna"].nunique()),
@@ -321,12 +337,17 @@ def render_dashboard(anio: int):
 
     with st.expander("Metodología y calidad de datos"):
         st.markdown(
-            """
-            - La vista principal usa por defecto solo registros con denominador válido.
-            - En la salida consolidada existen filas sin denominador, asociadas principalmente a vacunas escolares con códigos de comuna fuera de RM.
-            - Las coberturas regionales provienen de la hoja `Resumen_Regional`, que evita duplicaciones de denominador en el consolidado.
-            - En nivel comunal se muestra además el Servicio de Salud al que pertenece la comuna.
-            """
+            f"- El dashboard es un **reflejo de la fuente oficial** "
+            f"(**{cfg.oficial_etiqueta}**): vacunados, población objetivo y coberturas "
+            "se muestran tal cual fueron publicados, sin recalcular.\n"
+            "- Las coberturas regionales se reconstruyen sumando las comunas; cuadran con "
+            "la fila nacional publicada (corte MINSAL 2025) y con la hoja "
+            "`Resumen_Regional` del informe (2024).\n"
+            "- Se mantienen ocultas 8 vacuna-dosis (Hexavalente 1ª/2ª/refuerzo, "
+            "Meningocócica recombinante 1ª/2ª/refuerzo y Neumocócica conjugada 1ª/2ª), "
+            "según la decisión del informe final.\n"
+            "- En nivel comunal se muestra además el Servicio de Salud al que pertenece "
+            "la comuna.\n"
         )
         st.dataframe(quality_summary, use_container_width=True, hide_index=True)
         if not invalid_detail_df.empty:

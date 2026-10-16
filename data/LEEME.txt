@@ -1,7 +1,9 @@
 Colocar aqui los insumos externos (no versionados):
 
 - estimaciones-y-proyecciones-2002-2035-comunas(Est. y Proy. de Pob.csv   (INE)
-- Poblacion Escolar {AAAA}.xlsx            (MINEDUC; opcional por año)
+- Poblacion Escolar {AAAA}.xlsx            (MINEDUC; layout legacy, opcional)
+- Población MINEDUC{AAAA}.xlsx             (MINEDUC 2025; hoja {AAAA}RM, 1°/4°/5°/8° básico)
+- Población programáticas{AAAA}.xlsx        (2025; hoja "{AAAA} RM", columna gestantes 28+ semanas)
 - denominador_gestantes_{AAAA}.csv         (estimacion de gestantes; opcional)
 
 Los datos crudos RNI/SRP/NACIMIENTO se leen desde las rutas de las variables

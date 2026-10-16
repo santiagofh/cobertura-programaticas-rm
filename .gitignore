@@ -7,6 +7,10 @@ venv/
 # Secrets
 .streamlit/secrets.toml
 
+# Evidencia interna de reuniones (no publicar)
+Transcripcion reunion.txt
+Reunión de Microsoft Teams.docx
+
 # Datos crudos / confidenciales
 data/*
 !data/LEEME.txt

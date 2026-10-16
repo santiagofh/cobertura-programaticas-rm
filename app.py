@@ -37,8 +37,17 @@ if logo_path.exists() and icon_path.exists():
 
 with st.sidebar:
     st.header("Campaña")
-    anio = st.selectbox("Año", options=[2024, 2025, 2026], index=1,
-                        help="Los años sin coberturas en output/ no podrán visualizarse.")
+    anio = st.selectbox(
+        "Año",
+        [2025, 2024],
+        index=0,
+        format_func=lambda x: f"Año {x}",
+        key="selector_anio",
+    )
+    st.caption(
+        "Reflejo de la fuente oficial: corte MINSAL 2025 e Informe "
+        "Ejecutivo 2024 (resultados publicados, sin recalcular)."
+    )
 
 try:
     render_dashboard(anio)
