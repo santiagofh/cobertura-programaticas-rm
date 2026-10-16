@@ -3,7 +3,9 @@
 Genera planillas con formato de impresión (estilo proyecto Influenza):
 
   - output/coberturas_vacunas_{T}_PROPIO_{base}_imprimible.xlsx  (cálculo local)
-  - output/coberturas_vacunas_{T}_MINSAL_imprimible.xlsx         (corte MINSAL)
+  - output/coberturas_vacunas_{T}_MINSAL_imprimible.xlsx         (corte MINSAL,
+    solo las 15 vacuna-dosis visibles del dashboard; las 8 "Eliminar del cálculo"
+    quedan ocultas)
 
 Con `--base Final` genera además:
   - output/coberturas_vacunas_{T}_FINAL_imprimible.xlsx  (informe final imprimible)
@@ -38,7 +40,7 @@ from openpyxl.worksheet.page import PageMargins
 from openpyxl.worksheet.properties import PageSetupProperties
 
 from src import config_programaticas as cfgmod
-from src.dashboard_comun import DISPLAY_ORDER, VACUNA_META
+from src.dashboard_comun import DISPLAY_ORDER, VACUNA_META, VACUNAS_OCULTAS_DASHBOARD
 from src.pipeline.coberturas import latest_dated_file_any
 
 FILA_TOTAL = "TOTAL REGIÓN METROPOLITANA"
@@ -440,6 +442,10 @@ def exportar(anio: int = 2025, base: str = "SD",
     ))
 
     minsal = pd.read_csv(ruta_minsal, encoding="utf-8-sig")
+    # El imprimible MINSAL muestra solo las vacuna-dosis visibles en el dashboard
+    # (oculta las 8 marcadas "Eliminar del cálculo": Hexa 1ª/2ª/ref, MenR 1ª/2ª/ref,
+    # Neumo conj. 1ª/2ª).
+    minsal = minsal[~minsal["VACUNA_DASHBOARD"].isin(VACUNAS_OCULTAS_DASHBOARD)].copy()
     generados.append(_escribir_archivo(
         salida_dir / f"coberturas_vacunas_{T}_MINSAL_imprimible.xlsx",
         *_preparar_pivots(minsal),

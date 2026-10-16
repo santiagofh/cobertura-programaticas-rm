@@ -4,7 +4,8 @@ Compara celda a celda las 3 hojas de
 `output/coberturas_vacunas_{T}_MINSAL_imprimible.xlsx` (Cobertura %, Vacunados,
 Población objetivo) contra los CSV oficiales del corte MINSAL, reconstruyendo
 la matriz con las mismas reglas del exportador (etiquetas cortas, 52 comunas
-ordenadas + fila TOTAL REGIÓN METROPOLITANA).
+ordenadas + fila TOTAL REGIÓN METROPOLITANA; solo las 15 vacuna-dosis visibles
+del dashboard, con las 8 "Eliminar del cálculo" ocultas).
 
 Además revisa:
   - El CSV semilla `coberturas_vacunas_{T}_V7_MINSAL.csv` contra el detalle
@@ -31,6 +32,7 @@ import pandas as pd
 from convertir_minsal_programaticas import CORTE_DEFAULT, cargar_corte
 from exportar_excels_imprimibles import FILA_TOTAL, _preparar_pivots
 from src import config_programaticas as cfgmod
+from src.dashboard_comun import VACUNAS_OCULTAS_DASHBOARD
 
 HOJAS = [
     ("Cobertura %", "pct"),
@@ -159,10 +161,13 @@ def main():
     print(f"Detalle oficial: {len(det)} filas | "
           f"{det['VACUNA_DASHBOARD'].nunique()} combinaciones | "
           f"{det['COD_COMUNA_JOIN'].nunique()} comunas")
+    det_vis = det[~det["VACUNA_DASHBOARD"].isin(VACUNAS_OCULTAS_DASHBOARD)].copy()
+    print(f"Visibles en imprimible: {det_vis['VACUNA_DASHBOARD'].nunique()} vacuna-dosis "
+          f"({len(VACUNAS_OCULTAS_DASHBOARD)} ocultas)")
     print()
 
     print("1) Imprimible vs corte oficial")
-    verificar_imprimible(imprimible, det, args.tolerancia)
+    verificar_imprimible(imprimible, det_vis, args.tolerancia)
     print()
     print("2) CSV semilla vs corte oficial")
     verificar_semilla(semilla, det, args.tolerancia)

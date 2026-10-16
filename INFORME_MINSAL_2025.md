@@ -161,7 +161,7 @@ comunal acumulada (SAE) contra MINSAL baja a menos de la mitad
 - `output/coberturas_vacunas_2025_PROPIO_SD_imprimible.xlsx` — matriz
   imprimible del cálculo propio (24 vacuna-dosis).
 - `output/coberturas_vacunas_2025_MINSAL_imprimible.xlsx` — matriz imprimible
-  del corte MINSAL (23 vacuna-dosis).
+  del corte MINSAL (15 vacuna-dosis visibles; oculta las 8 "Eliminar del cálculo").
 
 ### Modificados (Programáticas)
 

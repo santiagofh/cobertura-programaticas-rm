@@ -118,7 +118,7 @@ Comparativa). Mantiene ocultas las 8 vacuna-dosis "Eliminar del cálculo"
 - Configuración por año en `src/config_programaticas.py`
   (`oficial_disponible`, `oficial_etiqueta`, `oficial_archivo`).
 - Verificación del imprimible MINSAL contra los CSV del corte (3 hojas,
-  52 comunas + TOTAL, cuadre nacional y semilla):
+  52 comunas + TOTAL, 15 vacuna-dosis visibles, cuadre nacional y semilla):
   `python verificar_minsal_imprimible.py` → PASS.
 - `src/minsal_comparacion.py` conserva el cruce local vs MINSAL para scripts
   (ya no se usa en el dashboard).
@@ -128,7 +128,8 @@ Comparativa). Mantiene ocultas las 8 vacuna-dosis "Eliminar del cálculo"
   - `coberturas_vacunas_2025_MINSAL_imprimible.xlsx`
   3 hojas (Cobertura % con semáforo, Vacunados, Población objetivo), matriz
   52 comunas + TOTAL REGIÓN METROPOLITANA, apaisado ajustado a 1 página de
-  ancho. El archivo PROPIO trae 24 vacuna-dosis; el MINSAL las 23 publicadas.
+  ancho. El archivo PROPIO trae 24 vacuna-dosis; el MINSAL las 15 visibles
+  del dashboard (oculta las 8 "Eliminar del cálculo").
 
 ## Bancos de prueba
 
