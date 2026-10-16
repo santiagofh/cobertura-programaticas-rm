@@ -205,8 +205,7 @@ CONFIGS = {
     2024: ConfigAnio(
         T=2024,
         page_title="Dashboard Programáticas 2024",
-        caption=("Año 2024. Reflejo del Informe Ejecutivo 2024 (corte 15-06-2026) — "
-                 "resultados publicados, sin recalcular."),
+        caption="Año 2024. Informe Ejecutivo 2024 (corte 15-06-2026).",
         strict_parquet=True,
         nac_raw=False,
         pob_esc_nombre="Poblacion Escolar 2024.xlsx",
@@ -219,8 +218,7 @@ CONFIGS = {
     2025: ConfigAnio(
         T=2025,
         page_title="Dashboard Programáticas 2025",
-        caption=("Año 2025. Reflejo del corte MINSAL 2026-10-09 — resultados "
-                 "publicados, sin recalcular."),
+        caption="Año 2025. Corte MINSAL 2026-10-09.",
         strict_parquet=False,
         nac_raw=True,
         pob_esc_nombre="Población MINEDUC2025.xlsx",

@@ -3,7 +3,6 @@ from pathlib import Path
 
 import streamlit as st
 
-from src import config_programaticas as cfgmod
 from src.dashboard_comun import render_dashboard
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,11 +19,6 @@ st.markdown(
     .stApp { background: linear-gradient(180deg, #F6FAFD 0%, #FFFFFF 14%, #FFFFFF 100%); }
     .stApp h1, .stApp h2, .stApp h3 { color: #006FB3; font-weight: 700; }
     .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-    .provisional-badge {
-        display: inline-block; margin: 0.15rem 0 0.6rem 0; padding: 0.35rem 0.7rem;
-        border-radius: 999px; background: #FFF3CD; border: 1px solid #F2C94C;
-        color: #7A4D00; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.01em;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -43,10 +37,6 @@ with st.sidebar:
         index=0,
         format_func=lambda x: f"Año {x}",
         key="selector_anio",
-    )
-    st.caption(
-        "Reflejo de la fuente oficial: corte MINSAL 2025 e Informe "
-        "Ejecutivo 2024 (resultados publicados, sin recalcular)."
     )
 
 try:

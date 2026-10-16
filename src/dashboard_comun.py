@@ -224,25 +224,16 @@ def to_excel_bytes(df: pd.DataFrame, quality_df: pd.DataFrame | None = None) -> 
     return buffer.getvalue()
 
 
-def render_badge(texto: str):
-    st.markdown(f'<div class="provisional-badge">{texto}</div>', unsafe_allow_html=True)
-
-
 def render_dashboard(anio: int):
     cfg = cfgmod.get_config(anio)
 
     st.title("Dashboard Coberturas Vacunas Programáticas")
-    render_badge(
-        f"Reflejo de la fuente oficial — {cfg.oficial_etiqueta} — "
-        "resultados publicados, sin recalcular"
-    )
 
     detail_df, detail_path = load_detail(anio)
     regional_df, _ = load_regional(anio)
     valid_detail_df = detail_df[detail_df["valid_denom"]].copy()
     invalid_detail_df = detail_df[~detail_df["valid_denom"]].copy()
 
-    st.caption(cfg.caption)
     render_coberturas(anio, cfg, detail_path,
                       regional_df, valid_detail_df, invalid_detail_df)
 
@@ -337,11 +328,9 @@ def render_coberturas(anio, cfg, detail_path,
 
     with st.expander("Metodología y calidad de datos"):
         st.markdown(
-            f"- El dashboard es un **reflejo de la fuente oficial** "
-            f"(**{cfg.oficial_etiqueta}**): vacunados, población objetivo y coberturas "
-            "se muestran tal cual fueron publicados, sin recalcular.\n"
+            f"- Fuente de datos: **{cfg.oficial_etiqueta}** (`{detail_path.name}`).\n"
             "- Las coberturas regionales se reconstruyen sumando las comunas; cuadran con "
-            "la fila nacional publicada (corte MINSAL 2025) y con la hoja "
+            "la fila nacional del corte (2025) y con la hoja "
             "`Resumen_Regional` del informe (2024).\n"
             "- Se mantienen ocultas 8 vacuna-dosis (Hexavalente 1ª/2ª/refuerzo, "
             "Meningocócica recombinante 1ª/2ª/refuerzo y Neumocócica conjugada 1ª/2ª), "
